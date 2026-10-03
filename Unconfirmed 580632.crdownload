@@ -1,0 +1,51 @@
+Attribute VB_Name = "Module1"
+Option Explicit
+
+Sub WelcomeMessage()
+    MsgBox "Welcome to VBA Programming!", vbInformation, "VBA"
+End Sub
+
+Sub VariablesDemo()
+    Dim userName As String
+    Dim orderCount As Integer
+    Dim isPremiumUser As Boolean
+
+    userName = "Jainil"
+    orderCount = 27
+    isPremiumUser = True
+
+    MsgBox "User name: " & userName & vbCrLf & _
+           "Order count: " & orderCount & vbCrLf & _
+           "Premium user: " & isPremiumUser, vbInformation, "User details"
+End Sub
+
+Sub CheckCellA1()
+    With ActiveSheet.Range("A1")
+        If IsNumeric(.Value) And Not IsEmpty(.Value) Then
+            If .Value > 100 Then
+                .Interior.Color = RGB(0, 176, 80)     ' green
+            Else
+                .Interior.Color = RGB(255, 0, 0)      ' red
+            End If
+        Else
+            .Interior.Color = RGB(255, 0, 0)          ' empty / text counts as "not > 100"
+        End If
+    End With
+End Sub
+
+Sub FillRowNumbers()
+    Dim i As Long
+    For i = 1 To 10
+        ActiveSheet.Cells(i, 1).Value = ActiveSheet.Cells(i, 1).Row
+    Next i
+End Sub
+
+Sub BoldHeadersAllSheets()
+    Dim ws As Worksheet
+    For Each ws In ThisWorkbook.Worksheets
+        With ws.Range("A1:D1").Font
+            .Bold = True
+            .Size = 14
+        End With
+    Next ws
+End Sub

@@ -1,0 +1,56 @@
+Attribute VB_Name = "RecordedMacros"
+Option Explicit
+
+Sub Macro1_EnterNameBold()
+' Recorded-style macro: enters a name in A1 and makes it bold
+    Range("A1").Select
+    ActiveCell.FormulaR1C1 = "Jainil"
+    Range("A1").Select
+    Selection.Font.Bold = True
+End Sub
+
+Sub Macro2_FormatHeaderAutofit()
+' Recorded-style macro: coloured header row + auto-fit all columns
+    Rows("1:1").Select
+    With Selection.Interior
+        .Pattern = xlSolid
+        .Color = RGB(31, 78, 121)
+    End With
+    With Selection.Font
+        .Bold = True
+        .Color = RGB(255, 255, 255)
+    End With
+    Cells.Select
+    Cells.EntireColumn.AutoFit
+    Range("A1").Select
+End Sub
+
+Sub Macro4_DeleteBlanksAndSort()
+' Deletes blank rows in column A (below the header) and sorts A-Z
+    Dim lastRow As Long
+    lastRow = Cells(Rows.Count, 1).End(xlUp).Row
+    Range("A2:A" & lastRow).Select
+    On Error Resume Next                       ' no blank cells = no error stop
+    Selection.SpecialCells(xlCellTypeBlanks).EntireRow.Delete
+    On Error GoTo 0
+    lastRow = Cells(Rows.Count, 1).End(xlUp).Row
+    Range("A1:A" & lastRow).Sort Key1:=Range("A1"), Order1:=xlAscending, Header:=xlYes
+    Range("A1").Select
+End Sub
+
+Sub Macro5_HighlightNamesStartingWithA()
+' Recorder-compatible: records the Conditional Formatting rule "Text that begins with A"
+    Dim lastRow As Long
+    lastRow = Cells(Rows.Count, 1).End(xlUp).Row
+    Range("A2:A" & lastRow).Select
+    Selection.FormatConditions.Delete
+    Selection.FormatConditions.Add Type:=xlTextString, String:="A", TextOperator:=xlBeginsWith
+    Selection.FormatConditions(Selection.FormatConditions.Count).SetFirstPriority
+    With Selection.FormatConditions(1).Interior
+        .PatternColorIndex = xlAutomatic
+        .Color = RGB(255, 255, 0)
+        .TintAndShade = 0
+    End With
+    Selection.FormatConditions(1).StopIfTrue = False
+    Range("A1").Select
+End Sub

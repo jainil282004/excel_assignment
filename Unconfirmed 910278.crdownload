@@ -1,0 +1,109 @@
+Attribute VB_Name = "Module1"
+Option Explicit
+
+Sub FormatIPLData()
+' Bold headers, auto-fit columns and borders around the whole table
+    Dim ws As Worksheet
+    Set ws = ActiveSheet
+    ws.Rows(1).Font.Bold = True
+    ws.UsedRange.Borders.LineStyle = xlContinuous
+    ws.UsedRange.Columns.AutoFit
+End Sub
+
+Sub CleanPlaylistData()
+' Trims extra spaces in every text cell, then removes duplicate rows (header in row 1)
+    Dim ws As Worksheet, rng As Range, c As Range
+    Dim lastRow As Long, lastCol As Long, i As Long, before As Long
+    Dim cols() As Variant
+
+    Set ws = ActiveSheet
+    lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
+    lastCol = ws.Cells(1, ws.Columns.Count).End(xlToLeft).Column
+    Set rng = ws.Range(ws.Cells(1, 1), ws.Cells(lastRow, lastCol))
+    before = lastRow - 1
+
+    For Each c In rng.Cells
+        If VarType(c.Value) = vbString Then c.Value = Application.WorksheetFunction.Trim(c.Value)
+    Next c
+
+    ReDim cols(0 To lastCol - 1)
+    For i = 0 To lastCol - 1
+        cols(i) = i + 1
+    Next i
+    rng.RemoveDuplicates Columns:=cols, Header:=xlYes
+
+    lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
+    MsgBox "Duplicates removed: " & (before - (lastRow - 1)), vbInformation, "CleanPlaylistData"
+End Sub
+
+Sub RefreshDashboard()
+' Refreshes every PivotTable and chart in the workbook (run from the dashboard button)
+    Dim ws As Worksheet, pt As PivotTable, co As ChartObject
+    Application.ScreenUpdating = False
+    For Each ws In ThisWorkbook.Worksheets
+        For Each pt In ws.PivotTables
+            pt.RefreshTable
+        Next pt
+    Next ws
+    For Each ws In ThisWorkbook.Worksheets
+        For Each co In ws.ChartObjects
+            co.Chart.Refresh
+        Next co
+    Next ws
+    Application.ScreenUpdating = True
+    MsgBox "Dashboard refreshed.", vbInformation
+End Sub
+
+Sub AddRefreshButton()
+' Creates the button on the active sheet and assigns RefreshDashboard to it
+    Dim btn As Button
+    Set btn = ActiveSheet.Buttons.Add(Range("H2").Left, Range("H2").Top, 130, 30)
+    btn.Caption = "Refresh Dashboard"
+    btn.OnAction = "RefreshDashboard"
+End Sub
+
+Sub ExportDashboardPDF()
+' Exports the 'Dashboard' sheet to the Desktop as Zomato_Sales_Dashboard.pdf with error handling
+    Dim ws As Worksheet, desktopPath As String, filePath As String
+
+    On Error Resume Next
+    Set ws = ThisWorkbook.Worksheets("Dashboard")
+    On Error GoTo 0
+    If ws Is Nothing Then
+        MsgBox "Sheet 'Dashboard' was not found.", vbExclamation
+        Exit Sub
+    End If
+
+    desktopPath = CreateObject("WScript.Shell").SpecialFolders("Desktop")
+    filePath = desktopPath & "\Zomato_Sales_Dashboard.pdf"
+
+    Err.Clear
+    On Error Resume Next
+    ws.ExportAsFixedFormat Type:=xlTypePDF, Filename:=filePath, Quality:=xlQualityStandard, _
+                           IncludeDocProperties:=True, IgnorePrintAreas:=False, OpenAfterPublish:=False
+    If Err.Number <> 0 Then
+        MsgBox "The PDF could not be saved:" & vbCrLf & Err.Description, vbCritical
+    Else
+        MsgBox "PDF saved to:" & vbCrLf & filePath, vbInformation
+    End If
+    On Error GoTo 0
+End Sub
+
+Sub RefreshPowerQueryData()
+' Prompt used with ChatGPT/Copilot: "Write a VBA macro that refreshes a Power Query data source
+' and then displays a message box saying 'Data refreshed successfully!'"
+    Dim cn As WorkbookConnection
+    On Error GoTo ErrHandler
+
+    For Each cn In ThisWorkbook.Connections
+        If cn.Type = xlConnectionTypeOLEDB Then cn.OLEDBConnection.BackgroundQuery = False   ' wait for completion
+    Next cn
+
+    ThisWorkbook.RefreshAll
+    Application.CalculateUntilAsyncQueriesDone
+    MsgBox "Data refreshed successfully!", vbInformation
+    Exit Sub
+
+ErrHandler:
+    MsgBox "Refresh failed: " & Err.Description, vbCritical
+End Sub
